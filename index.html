@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07110b">
+<link rel="manifest" href="manifest.webmanifest">
+<title>APK Creator AI</title>
+<style>
+:root{color-scheme:dark;--bg:#07110b;--panel:#101d15;--line:#263a2c;--green:#65f28b;--muted:#a9b9ad}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#183321 0,#07110b 55%);color:#f4fff6;font:16px system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
+header{padding:22px 18px 12px;max-width:980px;margin:auto}h1{margin:0;font-size:clamp(27px,6vw,42px)}header p{color:var(--muted);margin:6px 0}
+main{max-width:980px;margin:auto;padding:12px 16px 48px}.tabs{display:flex;gap:8px;overflow:auto;padding:5px 0 14px}
+button,.tab{border:1px solid var(--line);background:#14251a;color:#eaffee;border-radius:12px;padding:11px 15px;font:inherit;cursor:pointer}
+.tab[aria-selected=true],.primary{background:var(--green);color:#07110b;border-color:var(--green);font-weight:700}
+.panel{background:rgba(16,29,21,.94);border:1px solid var(--line);border-radius:18px;padding:18px;margin:10px 0}
+label{display:block;font-weight:650;margin:12px 0 7px}textarea,input{width:100%;border:1px solid #38513e;background:#08130c;color:white;border-radius:12px;padding:13px;font:inherit}
+textarea{min-height:150px;resize:vertical}small,.muted{color:var(--muted)}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#07110b;border:1px solid var(--line);padding:14px;border-radius:12px;min-height:70px}
+.notice{border-left:3px solid var(--green);padding:9px 12px;background:#12251a;color:#d9ffe2;border-radius:6px}
+.hidden{display:none}.file{display:flex;justify-content:space-between;gap:10px;align-items:center;border-bottom:1px solid var(--line);padding:10px 0}
+footer{max-width:980px;margin:auto;padding:0 18px 28px;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<header><h1>⚡ APK Creator AI</h1><p>Turn an app idea into an Android project starter.</p></header>
+<main>
+<nav class="tabs" aria-label="Main sections">
+<button class="tab" data-tab="create" aria-selected="true">Create</button>
+<button class="tab" data-tab="files" aria-selected="false">Files</button>
+<button class="tab" data-tab="build" aria-selected="false">APK Build</button>
+<button class="tab" data-tab="inspect" aria-selected="false">APK Inspect</button>
+</nav>
+<section id="create" class="panel">
+<h2>Create an app</h2>
+<p class="muted">Describe what you want your Android app to do.</p>
+<label for="appname">App name</label><input id="appname" value="My Android App" maxlength="40">
+<label for="prompt">Your app prompt</label><textarea id="prompt" placeholder="Example: Create a habit tracker with reminders, streaks, and a simple dashboard."></textarea>
+<div class="actions"><button class="primary" id="generate">Generate project starter</button><button id="clear">Clear</button></div>
+<p class="notice" id="status" role="status">This browser-only edition creates a starter project and saves your prompt. It does not connect to a hosted AI model or produce a finished APK by itself.</p>
+</section>
+<section id="files" class="panel hidden"><h2>Project files</h2><p class="muted">Files generated in this session appear here. Download the starter bundle to continue building.</p><div id="filelist"><p class="muted">No files generated yet.</p></div><div class="actions"><button id="download">Download project notes</button></div></section>
+<section id="build" class="panel hidden"><h2>Build an APK</h2><p>For a real Android build, export the project and use Android Studio or a configured cloud build such as GitHub Actions.</p><p class="notice">This website does not compile APKs on its own. You will need an Android build environment and, for a release APK, signing configuration.</p></section>
+<section id="inspect" class="panel hidden"><h2>Inspect an APK</h2><label for="apkfile">Choose an APK file</label><input id="apkfile" type="file" accept=".apk,application/vnd.android.package-archive"><div id="apkresult" class="muted">Choose an APK to check its basic ZIP container information.</div><p class="notice">This is a basic file check, not full APK decompilation or security analysis.</p></section>
+</main>
+<footer>APK Creator AI · Browser starter edition · No API key required</footer>
+<script>
+const tabs=[...document.querySelectorAll('.tab')];
+tabs.forEach(b=>b.addEventListener('click',()=>{tabs.forEach(x=>x.setAttribute('aria-selected',String(x===b)));document.querySelectorAll('main section').forEach(s=>s.classList.toggle('hidden',s.id!==b.dataset.tab));}));
+let generated=[];
+const safe=s=>s.replace(/[^\w.-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,40)||'My_Android_App';
+document.querySelector('#generate').addEventListener('click',()=>{
+ const name=document.querySelector('#appname').value.trim()||'My Android App';
+ const prompt=document.querySelector('#prompt').value.trim();
+ if(!prompt){document.querySelector('#status').textContent='Please enter an app description first.';return;}
+ const packageName='com.example.'+safe(name).toLowerCase().replace(/[^a-z0-9_]/g,'');
+ const notes=`App name: ${name}\nPackage: ${packageName}\n\nUser prompt:\n${prompt}\n\nBuild note:\nThis is a project brief for implementation. A real AI coding service or developer must turn the brief into app code, then compile it with Android tooling.`;
+ generated=[{name:'prompt.txt',content:notes},{name:'README.txt',content:`${name}\n\nStarter brief saved by APK Creator AI.\n\n${notes}`}];
+ document.querySelector('#filelist').innerHTML=generated.map(f=>`<div class="file"><span>${f.name}</span><button data-file="${f.name}">Download</button></div>`).join('');
+ document.querySelectorAll('[data-file]').forEach(b=>b.addEventListener('click',()=>saveFile(generated.find(f=>f.name===b.dataset.file))));
+ document.querySelector('#status').textContent='Starter brief created. Open Files to download it.';
+ document.querySelector('[data-tab="files"]').click();
+});
+document.querySelector('#clear').addEventListener('click',()=>{document.querySelector('#prompt').value='';document.querySelector('#status').textContent='Prompt cleared.';});
+function saveFile(f){if(!f)return;const a=document.createElement('a');const u=URL.createObjectURL(new Blob([f.content],{type:'text/plain'}));a.href=u;a.download=f.name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);}
+document.querySelector('#download').addEventListener('click',()=>{if(!generated.length){alert('Generate a project starter first.');return;}saveFile({name:'APK_Creator_AI_Project_Notes.txt',content:generated.map(f=>f.content).join('\n\n---\n\n')});});
+document.querySelector('#apkfile').addEventListener('change',async e=>{const f=e.target.files[0],out=document.querySelector('#apkresult');if(!f)return;const b=new Uint8Array(await f.slice(0,4).arrayBuffer());const sig=[0x50,0x4b,0x03,0x04];const ok=sig.every((v,i)=>b[i]===v);out.textContent=`File: ${f.name} · Size: ${f.size.toLocaleString()} bytes · ZIP signature: ${ok?'detected':'not detected'}. This quick check does not verify whether the APK is safe or installable.`;});
+</script>
+</body></html>

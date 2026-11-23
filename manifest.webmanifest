@@ -1,0 +1,8 @@
+{
+  "name": "APK Creator AI",
+  "short_name": "APK Creator",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#07110b",
+  "theme_color": "#07110b"
+}
